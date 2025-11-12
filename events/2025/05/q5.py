@@ -5,15 +5,10 @@ from math import inf
 
 @dataclass
 class Segment:
-    id: int | None = None
     spine: int | None = None
     left: int | None = None
     right: int | None = None
     next: Segment | None = None
-
-    # def __lt__(self, other: Segment) -> bool:
-    #     if self.quality() < other.quality():
-    #         return True
 
     def add(self, n: int) -> None:
         if self.spine is None:
@@ -27,20 +22,43 @@ class Segment:
                 self.next = Segment()
             self.next.add(n)
 
-    def quality(self) -> str:
-        if self.next is None:
-            return str(self.spine)
-        else:
-            return str(self.spine) + self.next.quality()
+
+@dataclass
+class Sword:
+    id: int
+    head: Segment
+
+    def __init__(self, id: int, values: list[int]):
+        self.id = id
+        self.head = Segment()
+        for v in values:
+            self.head.add(v)
+
+    def quality(self) -> int:
+        result = ""
+        curr = self.head
+        while curr is not None:
+            result += str(curr.spine)
+            curr = curr.next
+        return int(result)
 
     def level_scores(self) -> list[int]:
-        if self.spine is None:
-            return [0]
-        this_level = int(str(self.left or "") + str(self.spine) + str(self.right or ""))
-        if self.next is None:
-            return [this_level]
-        else:
-            return [this_level] + self.next.level_scores()
+        scores: list[int] = []
+        curr = self.head
+        while curr is not None:
+            this_level = (
+                str(curr.left or "") + str(curr.spine or "") + str(curr.right or "")
+            )
+            scores.append(int(this_level) or 0)
+            curr = curr.next
+        return scores
+
+    def __lt__(self, other: Sword) -> bool:
+        return (self.quality(), self.level_scores(), self.id) < (
+            other.quality(),
+            other.level_scores(),
+            other.id,
+        )
 
 
 def input(n: int, testing: bool = False) -> list[tuple[int, list[int]]]:
@@ -53,25 +71,33 @@ def input(n: int, testing: bool = False) -> list[tuple[int, list[int]]]:
     return lines
 
 
-fishbone = Segment()
+for id, values in input(1):
+    sword = Sword(id, values)
+    print(f"Part 1: {sword.quality()}")
 
-for _, sword in input(1):
-    for q in sword:
-        fishbone.add(q)
-
-print(f"Part 1: {fishbone.quality()}")
 
 # Part 2
 min_quality, max_quality = inf, -inf
 
-for _, sword in input(2):
-    fishbone = Segment()
-    for q in sword:
-        fishbone.add(q)
-    result = int(fishbone.quality())
+for id, values in input(2):
+    sword = Sword(id, values)
+    result = sword.quality()
     min_quality = min(min_quality, result)
     max_quality = max(max_quality, result)
 
 print(f"Part 2: Difference is {max_quality - min_quality}")
 
 # Part 3
+
+swords: list[Sword] = []
+
+for id, values in input(3):
+    swords.append(Sword(id, values))
+
+swords.sort(reverse=True)
+
+checksum = 0
+for i, s in enumerate(swords):
+    checksum += (i + 1) * s.id
+
+print(f"Part 3: Checksum is {checksum}")
