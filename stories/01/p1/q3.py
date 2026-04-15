@@ -1,16 +1,16 @@
-def input(n: int, testing: bool = False) -> list[dict[str, int]]:
-    lines: list[dict[str, int]] = []
+from typing import Generator
 
+
+def input(n: int, testing: bool = False) -> Generator[dict[str, int]]:
     filename = f"test{n}.txt" if testing else f"everybody_codes_e1_q01_p{n}.txt"
     with open(filename, "r") as file:
         for line in file:
-            d = {k: int(v) for k, v in (pair.split("=") for pair in line.split())}
-            lines.append(d)
-    return lines
+            yield {k: int(v) for k, v in (pair.split("=") for pair in line.split())}
 
 
-def eni_cycle(n: int, _: int, mod: int) -> tuple[list[int], list[int]]:
+def eni_cycle(n: int, mod: int) -> tuple[list[int], list[int]]:
     remainders: list[int] = []
+    seen: dict[int, int] = {}
 
     score = 1
     while True:
@@ -18,14 +18,15 @@ def eni_cycle(n: int, _: int, mod: int) -> tuple[list[int], list[int]]:
         score %= mod
         if score == 0:
             return remainders, [0]
-        elif score in remainders:
-            cutoff = remainders.index(score)
+        cutoff = seen.get(score)
+        if cutoff is not None:
             return remainders[:cutoff], remainders[cutoff:]
+        seen[score] = len(remainders)
         remainders.append(score)
 
 
 def eni_sum(n: int, exp: int, mod: int) -> int:
-    prefix, cycle = eni_cycle(n, exp, mod)
+    prefix, cycle = eni_cycle(n, mod)
 
     if exp <= len(prefix):
         return sum(prefix[:exp])
