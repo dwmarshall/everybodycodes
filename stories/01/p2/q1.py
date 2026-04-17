@@ -1,7 +1,8 @@
 from __future__ import annotations
-from collections import Counter, deque
+from collections import defaultdict, deque
 from dataclasses import dataclass
 import re
+import sys
 from typing import Generator
 
 
@@ -30,26 +31,25 @@ class Node:
                 curr = curr.right
             level += 1
 
-    def nodes_at_level(self, level: int) -> str:
-        result = ""
-        queue: deque[tuple[Node, int]] = deque([(self, 0)])
+    def extract(self) -> str:
+        entries: dict[int, list[str]] = defaultdict(list)
+        q: deque[tuple[Node, int]] = deque([(self, 0)])
 
-        while queue:
-            node, node_level = queue.popleft()
-            if node_level == level:
-                result += node.label
+        while q:
+            node, level = q.popleft()
+            entries[level].append(node.label)
             if node.left:
-                queue.append((node.left, node_level + 1))
+                q.append((node.left, level + 1))
             if node.right:
-                queue.append((node.right, node_level + 1))
+                q.append((node.right, level + 1))
 
-        return result
+        result = sorted(entries.values(), key=len, reverse=True)[0]
+        return "".join(result)
 
 
-def input(n: int, testing: bool = False) -> Generator[tuple[Node, Node]]:
-    filename = f"test{n}.txt" if testing else f"everybody_codes_e1_q02_p{n}.txt"
+def input() -> Generator[tuple[Node, Node]]:
 
-    with open(filename, "r") as file:
+    with open(sys.argv[1], "r") as file:
         lines = file.readlines()
         for line in lines:
             m = re.match(r"ADD id=\d+ left=\[(\d+),(.)\] right=\[(\d+),(.)\]", line)
@@ -62,25 +62,17 @@ def input(n: int, testing: bool = False) -> Generator[tuple[Node, Node]]:
 
 left: Node | None = None
 right: Node | None = None
-left_counter: Counter[int] = Counter()
-right_counter: Counter[int] = Counter()
 
-for input_left, input_right in input(1):
+for input_left, input_right in input():
     if left is None:
         left = input_left
-        left_counter[0] += 1
     else:
-        left_counter[left.add(input_left)] += 1
+        left.add(input_left)
 
     if right is None:
         right = input_right
-        right_counter[0] += 1
     else:
-        right_counter[right.add(input_right)] += 1
+        right.add(input_right)
 
-most_numerous_left = left_counter.most_common(1)[0][0]
-most_numerous_right = right_counter.most_common(1)[0][0]
 assert left is not None and right is not None
-print(
-    left.nodes_at_level(most_numerous_left) + right.nodes_at_level(most_numerous_right)
-)
+print(left.extract() + right.extract())
