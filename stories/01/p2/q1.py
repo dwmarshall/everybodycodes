@@ -7,15 +7,15 @@ from typing import Generator
 
 
 @dataclass
-class Node:
+class Tree:
     value: int
     label: str
-    left: Node | None = None
-    right: Node | None = None
+    left: Tree | None = None
+    right: Tree | None = None
 
-    def add(self, other: Node) -> int:
+    def add(self, other: Tree) -> int:
         level = 0
-        curr: Node = self
+        curr: Tree = self
 
         while True:
             assert other.value != curr.value
@@ -33,7 +33,7 @@ class Node:
 
     def extract(self) -> str:
         entries: dict[int, list[str]] = defaultdict(list)
-        q: deque[tuple[Node, int]] = deque([(self, 0)])
+        q: deque[tuple[Tree, int]] = deque([(self, 0)])
 
         while q:
             node, level = q.popleft()
@@ -46,7 +46,7 @@ class Node:
         result = sorted(entries.values(), key=len, reverse=True)[0]
         return "".join(result)
 
-    def swap(self, other: Node) -> None:
+    def swap(self, other: Tree) -> None:
         self.value, other.value = other.value, self.value
         self.label, other.label = other.label, self.label
         # For Part 2, don't swap the subtrees
@@ -54,7 +54,7 @@ class Node:
         # self.right, other.right = other.right, self.right
 
 
-def input() -> Generator[tuple[str, int, Node, Node] | tuple[str, int]]:
+def input() -> Generator[tuple[str, int, Tree, Tree] | tuple[str, int]]:
 
     with open(sys.argv[1], "r") as file:
         lines = file.readlines()
@@ -65,18 +65,18 @@ def input() -> Generator[tuple[str, int, Node, Node] | tuple[str, int]]:
                 yield (
                     "ADD",
                     int(m.group(1)),
-                    Node(int(m.group(2)), m.group(3)),
-                    Node(int(m.group(4)), m.group(5)),
+                    Tree(int(m.group(2)), m.group(3)),
+                    Tree(int(m.group(4)), m.group(5)),
                 )
             elif m := re.match(r"SWAP (\d+)", line):
                 yield ("SWAP", int(m.group(1)))
 
 
-left_lookup: dict[int, Node] = {}
-right_lookup: dict[int, Node] = {}
+left_lookup: dict[int, Tree] = {}
+right_lookup: dict[int, Tree] = {}
 
-left: Node | None = None
-right: Node | None = None
+left: Tree | None = None
+right: Tree | None = None
 
 for t in input():
     if t[0] == "ADD" and len(t) == 4:
@@ -94,8 +94,8 @@ for t in input():
         else:
             right.add(input_right)
     elif t[0] == "SWAP" and len(t) == 2:
-        left_swap: Node = left_lookup[t[1]]
-        right_swap: Node = right_lookup[t[1]]
+        left_swap: Tree = left_lookup[t[1]]
+        right_swap: Tree = right_lookup[t[1]]
         left_swap.swap(right_swap)
 
 
