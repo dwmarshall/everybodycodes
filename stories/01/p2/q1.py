@@ -46,33 +46,58 @@ class Node:
         result = sorted(entries.values(), key=len, reverse=True)[0]
         return "".join(result)
 
+    def swap(self, other: Node) -> None:
+        self.value, other.value = other.value, self.value
+        self.label, other.label = other.label, self.label
+        # For Part 2, don't swap the subtrees
+        # self.left, other.left = other.left, self.left
+        # self.right, other.right = other.right, self.right
 
-def input() -> Generator[tuple[Node, Node]]:
+
+def input() -> Generator[tuple[str, int, Node, Node] | tuple[str, int]]:
 
     with open(sys.argv[1], "r") as file:
         lines = file.readlines()
         for line in lines:
-            m = re.match(r"ADD id=\d+ left=\[(\d+),(.)\] right=\[(\d+),(.)\]", line)
-            assert m is not None
-            yield (
-                Node(int(m.group(1)), m.group(2)),
-                Node(int(m.group(3)), m.group(4)),
-            )
+            if m := re.match(
+                r"ADD id=(\d+) left=\[(\d+),(.)\] right=\[(\d+),(.)\]", line
+            ):
+                yield (
+                    "ADD",
+                    int(m.group(1)),
+                    Node(int(m.group(2)), m.group(3)),
+                    Node(int(m.group(4)), m.group(5)),
+                )
+            elif m := re.match(r"SWAP (\d+)", line):
+                yield ("SWAP", int(m.group(1)))
 
+
+left_lookup: dict[int, Node] = {}
+right_lookup: dict[int, Node] = {}
 
 left: Node | None = None
 right: Node | None = None
 
-for input_left, input_right in input():
-    if left is None:
-        left = input_left
-    else:
-        left.add(input_left)
+for t in input():
+    if t[0] == "ADD" and len(t) == 4:
+        id = t[1]
+        input_left, input_right = t[2:]
+        left_lookup[id] = input_left
+        right_lookup[id] = input_right
+        if left is None:
+            left = input_left
+        else:
+            left.add(input_left)
 
-    if right is None:
-        right = input_right
-    else:
-        right.add(input_right)
+        if right is None:
+            right = input_right
+        else:
+            right.add(input_right)
+    elif t[0] == "SWAP" and len(t) == 2:
+        left_swap: Node = left_lookup[t[1]]
+        right_swap: Node = right_lookup[t[1]]
+        left_swap.swap(right_swap)
+
 
 assert left is not None and right is not None
 print(left.extract() + right.extract())
